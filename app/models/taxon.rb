@@ -2,16 +2,24 @@ class Taxon < ActiveRecord::Base
   acts_as_adjacency_list :foreign_key => 'parent_id', :order => 'position'
   belongs_to :taxonomy
   has_and_belongs_to_many :products
-  before_save :set_permalink  
-    
+  before_save :set_permalink
+
+  def update_permalink_base(new_name)
+    old_links = self.permalink.split('/')
+    old_links[0] = escape(new_name)
+    self.permalink = old_links.join('/') + '/'
+    self.save
+  end
+
   private
+
   def set_permalink
     ancestors.reverse.collect { |ancestor| ancestor.name }.join( "/")
     prefix = ancestors.reverse.collect { |ancestor| escape(ancestor.name) }.join( "/")
     prefix += "/" unless prefix.blank?
     self.permalink =  prefix + "#{escape(name)}/"
   end
-  
+
   # taken from the find_by_param plugin
   def escape(str)
     return "" if str.blank? # hack if the str/attribute is nil/blank
@@ -24,5 +32,5 @@ class Taxon < ActiveRecord::Base
       s.gsub!(/([^ a-zA-Z0-9_-]+)/n,"") # and now kill every char not allowed.
     end
   end
-  
+
 end
